@@ -1,0 +1,448 @@
+clc;
+clear;
+close all;
+% Define the parameters
+fm = 500;           % Frequency of the message signal (Hz)
+fs = 1500;          % Sampling frequency (Hz)
+% Generate the continuous signal
+t = 0:1/(10*fm):1/fm;  % Time vector for the continuous signal
+x = sin(2*pi*fm*t);    % Continuous signal
+% Plot the continuous signal
+figure;
+subplot(3,1,1);
+plot(t, x);
+xlabel("Time");
+ylabel("Amplitude");
+title("Input Signal");
+% Sample the signal
+t_sampled = 0:1/fs:max(t);     % Time vector for the sampled signal
+x_sampled = interp1(t, x, t_sampled, 'linear');  % Linear interpolation for sampling
+% Plot the sampled signal
+subplot(3,1,2);
+stem(t_sampled, x_sampled);
+xlabel("Time");
+ylabel("Amplitude");
+title("Sampled Signal");
+% Reconstruct the signal using cubic spline interpolation
+t_reconstructed = t;
+x_reconstructed = interp1(t_sampled, x_sampled, t_reconstructed, 'spline');  % Cubic spline interpolation for reconstruction
+% Plot the reconstructed signal
+subplot(3,1,3);
+plot(t_reconstructed, x_reconstructed);
+xlabel("Time");
+ylabel("Amplitude");
+title("Reconstructed Signal (Cubic Spline)");
+
+
+
+% Clear workspace and close all figures
+clc;
+clear ;
+close all;
+% Original signal parameters
+f = 500;            % Signal frequency (Hz)
+t = 0:1/(10*f):1/f;    % Time vector
+% Generate original sinusoidal wave
+x = sin(2*pi*f*t);
+% Plot original signal
+subplot(3, 2, 1);
+plot(t, x);
+xlabel('Time');
+ylabel('Amplitude');
+title('Original Signal');
+% Sampling parameters
+fs = 6500;          % Sampling frequency (Hz)
+t2 = 0:1/fs:1/f;   % Time vector for sampled signal
+% Generate sampled sinusoidal wave
+sig = sin(2*pi*f*t2);
+% Plot sampled signal
+subplot(3, 2, 3);
+stem(t2, sig);
+xlabel('Time');
+ylabel('Amplitude');
+title('Sampled Signal');
+% Quantization parameters
+N = 4;              % Number of quantization bits
+Vh = max(sig);      % Maximum value of the sampled signal
+Vl = min(sig);      % Minimum value of the sampled signal
+M = 2^N;            % Number of quantization levels
+S = (Vh - Vl) / M;  % Step size
+% Uniform quantization
+partition = Vl + S:S:Vh-S;
+codebook = Vl + S/2:S:Vh-S/2;
+[index, quantized_sig] = quantiz(sig, partition, codebook);
+% Plot quantized signal
+subplot(3, 2, 5);
+stem(t2, quantized_sig);
+xlabel('Time');
+ylabel('Amplitude');
+title('Quantized Signal');
+% Pulse Code Modulation (PCM) waveform
+coded_sig = de2bi(index, N, 'left-msb');
+tx_bits = reshape(coded_sig', 1, []);
+tt = 0:N*length(t2)-1;
+% Plot PCM waveform
+subplot(3, 2, 2);
+stairs(tt, tx_bits);
+axis([0 30 -2 3]);
+xlabel('Time');
+title('PCM Waveform');
+% Decoding and Re-quantization
+index1 = bi2de(reshape(tx_bits, N, length(sig))', 'left-msb');
+reconstructed_sig = S * index1 + Vl + (S/2);
+% Plot reconstructed signal
+subplot(3, 2, 4);
+plot(t2, reconstructed_sig);
+xlabel('Time');
+ylabel('Amplitude');
+title('Received Signal');
+% Adjust plot layout
+sgtitle('PCM Modulation and Reconstruction');
+
+% Signal generation
+clc;
+close all;
+clear all;
+% Generate time vector up to 4pi
+x = 0:0.5:4*pi;
+% Generate 1st sinusoidal signal
+sig1 = 8*sin(x);
+% Generate 2nd triangular signal
+sig2 = 8*triang(length(sig1));
+% Plot original signals
+subplot(2,2,1);
+plot(x, sig1);
+title('Sinusoidal Signal');
+xlabel('Time');
+ylabel('Amplitude');
+subplot(2,2,2);
+plot(x, sig2);
+title('Triangular Signal');
+xlabel('Time');
+ylabel('Amplitude');
+% Sample signals
+sample_rate = 1; % Sample rate
+sampled_sig1 = downsample(sig1, sample_rate);
+sampled_sig2 = downsample(sig2, sample_rate);
+% Plot sampled signals
+subplot(2,2,3);
+stem(sampled_sig1);
+title('Sampled Sinusoidal Signal');
+xlabel('Sample Index');
+ylabel('Amplitude');
+subplot(2,2,4);
+stem(sampled_sig2);
+title('Sampled Triangular Signal');
+xlabel('Sample Index');
+ylabel('Amplitude');
+% Multiplex the sampled signals
+tdmsig = [sampled_sig1(:)'; sampled_sig2(:)'];
+% Plot TDM signal
+figure;
+stem(tdmsig(:));
+title('Multiplexed TDM Signal');
+xlabel('Sample Index');
+ylabel('Amplitude');
+% Demultiplexing of TDM Signal
+demux = reshape(tdmsig, 2, []);
+sig3 = demux(1,:);
+sig4 = demux(2,:);
+% Plot TDM signal for sinusoidal signal
+figure;
+subplot(2,1,1);
+stem(sig3);
+title('TDM Signal - Sinusoidal Component');
+xlabel('Sample Index');
+ylabel('Amplitude');
+% Plot TDM signal for triangular signal
+subplot(2,1,2);
+stem(sig4);
+title('TDM Signal - Triangular Component');
+xlabel('Sample Index');
+ylabel('Amplitude');
+
+clc;
+clear;
+close all;
+% Define parameters
+fs = 1000; % Sampling frequency (Hz)
+Tb = 0.1; % Bit duration (seconds)
+t = 0:1/(10*fs):2/fs; % Time vector for one bit duration
+% Define carrier frequency
+fc = 1000; % Carrier frequency (Hz)
+% Define carrier amplitudes
+A0 = 5; % Amplitude for carrier 1
+A1 = 10; % Amplitude for carrier 2
+% Generate carrier signals
+carrier1 = A0* sin(2*pi*fc*t);
+carrier2 = A1 * sin(2*pi*fc*t);
+% Plot carrier signals
+figure;
+subplot(2,1,1);
+plot(t, carrier1);
+title('Carrier Signal 1');
+xlabel('Time (s)');
+ylabel('Amplitude');
+ylim([-6 6]); % Adjusted ylim for better visualization
+grid on;
+subplot(2,1,2);
+plot(t, carrier2);
+title('Carrier Signal 2');
+xlabel('Time (s)');
+ylabel('Amplitude');
+ylim([-11 11]); % Adjusted ylim for better visualization
+grid on;
+% Define the message signal
+message = [1, 0, 1, 0, 0, 1];
+% Generate the ASK signal based on the message
+ask_signal = [];
+pam_signal = [];
+ask_signal_noise=[];
+for bit = message
+    if bit == 0
+        modulating_signal = A0 * sin(2*pi*fc*t);
+        pam_signal = [pam_signal 0 * ones(1, length(t))];
+    else
+        modulating_signal = A1 * sin(2*pi*fc*t);
+        pam_signal = [pam_signal 1 * ones(1, length(t))];
+    end
+    ask_signal = [ask_signal, modulating_signal];
+    % Add AWGN to the modulating signal
+    SNR = 10; % Specify SNR in dB
+    modulating_signal_with_noise = awgn(modulating_signal, SNR, 'measured');
+    
+    ask_signal_noise = [ask_signal_noise, modulating_signal_with_noise];
+end
+% Plot PAM signal
+figure;
+plot(pam_signal);
+title('Pulse Amplitude Modulation (PAM) Signal for Message "100110"');
+xlabel('Time (s)');
+ylabel('Amplitude');
+ylim([-0.1 1.1]);
+grid on;
+% Plot ASK signal
+figure;
+plot(ask_signal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Amplitude Shift Keying (ASK) Signal with Message "101001"');
+% Plot ASK signal with AWGN
+figure;
+plot(ask_signal_noise);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Amplitude Shift Keying (ASK) Signal with Message "101001" with AWGN');
+
+
+clc;
+clear;
+close all;
+% Define parameters
+fs = 1000; % Sampling frequency (Hz)
+Tb = 0.1; % Bit duration (seconds)
+t = 0:1/(10*fs):2/fs; % Time vector for one bit duration
+% Define carrier frequencies
+f1 = 500; % Carrier frequency for bit 0 (Hz)
+f2 = 1000; % Carrier frequency for bit 1 (Hz)
+% Define carrier amplitude
+A = 1;
+% Generate carrier signals
+carrier1 = sin(2*pi*f1*t);
+carrier2 = sin(2*pi*f2*t);
+% Plot carrier signals
+figure;
+subplot(2,1,1);
+plot(t, carrier1);
+title('Carrier Signal 1 (Frequency: 500 Hz)');
+xlabel('Time (s)');
+ylabel('Amplitude');
+grid on;
+subplot(2,1,2);
+plot(t, carrier2);
+title('Carrier Signal 2 (Frequency: 1000 Hz)');
+xlabel('Time (s)');
+ylabel('Amplitude');
+grid on;
+% Define the message signal
+message = [1, 0, 1, 0, 0, 1];
+% Generate the FSK signal based on the message
+fsk_signal = [];
+pam_signal = [];
+fsk_signal_noise = [];
+for bit = message
+    if bit == 0
+        modulating_signal = A * sin(2*pi*f1*t);
+        pam_signal = [pam_signal 0 * ones(1, length(t))];
+    else
+        modulating_signal = A * sin(2*pi*f2*t);
+        pam_signal = [pam_signal 1 * ones(1, length(t))];
+    end
+    
+    fsk_signal = [fsk_signal, modulating_signal];
+    
+    % Add AWGN to the modulating signal
+    SNR = 20; % Specify SNR in dB
+    modulating_signal_with_noise = awgn(modulating_signal, SNR, 'measured');
+    
+    fsk_signal_noise = [fsk_signal_noise, modulating_signal_with_noise];
+end
+% Plot PAM signal
+figure;
+plot(pam_signal);
+title('Pulse Amplitude Modulation (PAM) Signal for Message "100110"');
+xlabel('Time (s)');
+ylabel('Amplitude');
+ylim([-0.1 1.1]);
+grid on;
+% Plot FSK signal
+figure;
+plot(fsk_signal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Frequency Shift Keying (FSK) Signal with Message "101001"');
+% Plot FSK signal with AWGN
+figure;
+plot(fsk_signal_noise);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Frequency Shift Keying (FSK) Signal with Message "101001" with AWGN');
+
+
+
+clc;
+clear;
+close all;
+% Define parameters
+fs = 1000; % Sampling frequency (Hz)
+Tb = 0.1; % Bit duration (seconds)
+t = 0:1/(10*fs):2/fs; % Time vector for one bit duration
+% Define carrier frequency
+fc = 1000; % Carrier frequency (Hz)
+% Define carrier amplitude
+A = 1;
+% Define binary symbols
+binary_symbols = [0, 1];
+% Generate carrier signals
+carrier = A * sin(2*pi*fc*t); % Carrier signal for both symbols
+% Plot carrier signal
+figure;
+plot(t, carrier);
+title('Carrier Signal');
+xlabel('Time (s)');
+ylabel('Amplitude');
+grid on;
+% Define the message signal
+message = [1, 0, 1, 0, 0, 1];
+% Generate the BPSK signal based on the message
+bpsk_signal = [];
+pam_signal = [];
+bpsk_signal_noise = [];
+for bit = message
+    % Determine the phase shift based on the binary symbol
+    phase_shift = pi*bit;
+    
+    % Generate BPSK signal
+    bpsk_symbol = A * sin(2*pi*fc*t + phase_shift);
+    
+    % Concatenate BPSK symbols
+    bpsk_signal = [bpsk_signal, bpsk_symbol];
+    
+    % Generate PAM signal (for visualization)
+    pam_signal = [pam_signal, bit * ones(1, length(t))];
+    
+    % Add AWGN to the BPSK signal
+    SNR = 10; % Specify SNR in dB
+    bpsk_symbol_with_noise = awgn(bpsk_symbol, SNR, 'measured');
+    bpsk_signal_noise = [bpsk_signal_noise, bpsk_symbol_with_noise];
+end
+% Plot PAM signal
+figure;
+plot(pam_signal);
+title('Pulse Amplitude Modulation (PAM) Signal for Message');
+xlabel('Time (s)');
+ylabel('Amplitude');
+ylim([-0.1 1.1]);
+grid on;
+% Plot BPSK signal
+figure;
+plot(bpsk_signal);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Binary Phase Shift Keying (BPSK) Signal with Message');
+% Plot BPSK signal with AWGN
+figure;
+plot(bpsk_signal_noise);
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Binary Phase Shift Keying (BPSK) Signal with AWGN');
+
+
+clc;
+clear;
+close all;
+% Define parameters
+fs = 1000; % Sampling frequency (Hz)
+Tb = 0.1; % Bit duration (seconds)
+t = 0:1/(10*fs):2/fs; % Time vector for one bit duration
+% Define carrier frequency
+fc = 1000; % Carrier frequency (Hz)
+% Define carrier amplitude
+A = 1;
+% Define constellation points (1-i format)
+constellation_points = [1 + 1i, -1 + 1i, -1 - 1i, 1 - 1i]; % 4-QAM
+% Plot constellation points
+figure;
+scatter(real(constellation_points), imag(constellation_points), 'o');
+title('Constellation Points (4-QAM)');
+xlabel('Real Part');
+ylabel('Imaginary Part');
+grid on;
+axis equal;
+% Define the message signal
+% Sample message for 4-QAM
+message = [0 1 2 3 0 3]; % Representing 00, 01, 10, 11, 00, 11
+% Generate the QAM signal based on the message
+qam_signal = [];
+pam_signal = [];
+qam_signal_noise = [];
+for symbol_index = message
+    % Select the corresponding constellation point
+    symbol = constellation_points(symbol_index + 1); % MATLAB indexing starts from 1
+    
+    % Generate QAM signal (modulation)
+    qam_symbol = A * symbol * exp(1i * (2*pi*fc*t)); % Applying phase shift
+    
+    % Concatenate QAM symbols
+    qam_signal = [qam_signal, qam_symbol];
+    
+    % Generate PAM signal (for visualization)
+    pam_signal = [pam_signal, real(qam_symbol) .* ones(1, length(t))]; % Corrected line
+    
+    % Add AWGN to the QAM signal
+    SNR = 10; % Specify SNR in dB
+    qam_symbol_with_noise = awgn(qam_symbol, SNR, 'measured');
+    qam_signal_noise = [qam_signal_noise, qam_symbol_with_noise];
+end
+% Plot PAM signal
+figure;
+plot(pam_signal);
+title('Pulse Amplitude Modulation (PAM) Signal for Message');
+xlabel('Time (s)');
+ylabel('Amplitude');
+ylim([-1.5 1.5]);
+grid on;
+% Plot QAM signal
+figure;
+plot(real(qam_signal), imag(qam_signal));
+xlabel('Real Part');
+ylabel('Imaginary Part');
+title('Quadrature Amplitude Modulation (QAM) Signal with Message');
+grid on;
+% Plot QAM signal with AWGN
+figure;
+plot(real(qam_signal_noise), imag(qam_signal_noise));
+xlabel('Real Part');
+ylabel('Imaginary Part');
+title('Quadrature Amplitude Modulation (QAM) Signal with AWGN');
+grid on;
